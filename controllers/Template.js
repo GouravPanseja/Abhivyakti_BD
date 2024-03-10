@@ -20,3 +20,38 @@ exports.getAllTemplates = async (req,res)=>{
         })
     }
 }
+
+exports.getTemplate = async (req,res)=>{
+
+    try{
+
+        const {id} = req.body;
+
+        if(!id){
+            console.log("template id not sent in req");
+            return res.status(400).json({
+                success:false,
+                message:"template id not present"
+            })
+        }
+
+
+        const template = await Template.findById(id).populate("data").exec();
+
+        return res.status(200).json({
+            success:true,
+            message:"data fetched succesfully",
+            data:template,
+        })
+
+    }
+
+    catch(err){
+        console.log(err);
+
+        return res.status(400).json({
+            success:false,
+            message:"unable to fetch data",
+        })
+    }
+}

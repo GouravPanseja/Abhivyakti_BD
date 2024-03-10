@@ -22,6 +22,10 @@ const TemplateSchema = mongoose.Schema({
         trim:true,
         enum:["government","healthcare","educational", "customer","diversity","covid-19","market"]
     },
+    estimatedTime:{
+        type:String,
+        required:true,
+    },
     data:[{
         type:mongoose.Schema.Types.ObjectId,
         ref:"Que",

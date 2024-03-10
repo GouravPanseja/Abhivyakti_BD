@@ -7,12 +7,20 @@ const TemplateSchema = mongoose.Schema({
         required:true,
         trim:true,
     },
-
+    description:{
+        type:String,
+        required:true,
+        trim:true,
+    },
+    thumbnail:{
+        type:String,
+        required:true,
+    },
     category:{
         type:String,
         required:true,
         trim:true,
-        enum:["governmentSurvey","healthcareSurvey","eventSurvey","feedbackSurvey","diversity","covid-19","others"]
+        enum:["government","healthcare","educational", "customer","diversity","covid-19","market"]
     },
     data:[{
         type:mongoose.Schema.Types.ObjectId,
@@ -23,10 +31,7 @@ const TemplateSchema = mongoose.Schema({
         required:true,
         default:Date.now()
     },
-    thumbnail:{
-        type:String,
-        required:true,
-    }
+    
 })
 
 module.exports = mongoose.model("Template", TemplateSchema);

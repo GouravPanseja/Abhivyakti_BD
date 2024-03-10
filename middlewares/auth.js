@@ -7,11 +7,15 @@ require("dotenv").config();
 exports.auth = async (req,res,next)=>{
 
     try{
+        console.log("jkfd");
         // extract token
-        const {token} = req.body.token 
-                        || req.cookies.token
-                        || req.header("Authorisation").replace("Bearer ", "");
 
+
+        const token = req?.body?.token 
+                        || req?.cookies?.token
+                        || req?.header("Authorization")?.replace("Bearer ", "");
+
+        console.log(token);
 
         // if token could'nt be obtained from any of the three sources-> return error
         if(!token){
@@ -26,6 +30,7 @@ exports.auth = async (req,res,next)=>{
         try{                                                                    // wierd internal implimentation of jwt.verify even though being async and returnign promise still dosn't uses await
             const decodedPayload = jwt.verify(token, process.env.JWT_SECRET);
             console.log("decodedPayload" ,decodedPayload);
+
             req.user = decodedPayload;
         }
         catch(err){
@@ -44,18 +49,22 @@ exports.auth = async (req,res,next)=>{
             message:"Something went wrong while authorisation with token"
         })
     }
+
+
 }
 
 // isStudent ---> check if the role is studend of the client
 exports.isFormFiller = async(req,res,next) =>{
     try{
-    
+        
         if(req.user.role !== 'formFiller'){
             return res.status(401).json({
                 success:false,
                 message:"This is a protected route for newUsers only"
             })
+            
         }
+        
         
     }
     catch(err){
@@ -76,6 +85,9 @@ exports.isAdmin = async(req,res,next) =>{
                 message:"This is a protected route for Admin only"
             })
         }
+
+        next();
+        console.log("user is allowed it is admin");
         
     }
     catch(err){

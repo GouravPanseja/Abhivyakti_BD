@@ -4,7 +4,9 @@ const otpGenerator = require("otp-generator");
 const bcrypt = require("bcrypt");
 const Profile = require("../models/Profile");
 const mailSender = require("../utils/mailSender");
+const jwt = require("jsonwebtoken")
 
+require("dotenv").config()
 // send OTP function
 exports.sendOtp = async(req,res)=>{
 
@@ -225,7 +227,7 @@ exports.login = async(req,res)=>{
                 role:userDet.accountType,
             }
             
-            const token = jwt.sign(payload, process.env.JWT_SECRET,{
+            const token = jwt.sign(payload,"secret",{
                 expiresIn:"2h",
             });
             
@@ -301,6 +303,37 @@ exports.changePassword = async (req,res)=>{
         return res.status(400).json({
             success:false,
             message:""
+        })
+    }
+}
+
+exports.getUser = async (req,res) =>{
+    try{
+        const userDet = req.user;
+
+        if(!userDet){
+            console.log("token not present");
+            res.status(400).json({
+                success:false,
+                message:"userDetails couldn't be obtained"
+            })
+        }
+
+        const user = await User.findOne({email:userDet.email})
+        .populate("profile")
+        .populate("forms");
+
+        res.status(200).json({
+            success:true,
+            message:"User details fetched successfully",
+            data:user,
+        })
+    }
+    catch(err){
+        console.log(err);
+        res.status(400).json({
+            success:false,
+            message:"someting went wrong while fetching user details",
         })
     }
 }

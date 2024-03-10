@@ -4,7 +4,8 @@ const Que  = require("../models/Que");
 const Comment  = require("../models/Comment");
 const Response  = require("../models/Response");
 const imageUploader = require("../utils/imageUploader");
-
+const mongoose = require("mongoose");
+const { ObjectId } = require('mongodb');
 // create a form
 
 exports.createForm = async(req,res)=>{
@@ -73,8 +74,9 @@ exports.createForm = async(req,res)=>{
 // get all forms for the user
 exports.getAllForms = async(req,res)=>{
     try{
+        console.log("getting all forms");
         // fetch data
-        const {userDet} = req.user;           // will be put by auth middleware
+        const userDet = req.user;           // will be put by auth middleware
 
 
         // validation
@@ -85,14 +87,16 @@ exports.getAllForms = async(req,res)=>{
             })
         }
 
+        const userDoc = await User.findOne({email:userDet.email});
+
         // get all forms created by this user from the db
-        const forms = await Form.find({admin:userDet.id})
-        .populate("admin")
-        .populate("data")
-        .populate("responses")
-        .populate("comments");
+
+        const forms = await Form.find({admin:userDet.id});
+
         
+
         return res.status(200).json({
+            
             success:true,
             message:"Forms fetched succesfully",
             data:forms,

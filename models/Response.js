@@ -2,10 +2,17 @@ const mongoose = require("mongoose");
 
 const ResponseSchema = mongoose.Schema({
 
-    responseBy:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:"User",
-        required:true,
+    name:{
+        type:String,
+    },
+    email:{
+        type:String,
+    },
+    age:{
+        type:String,
+    },
+    gender:{
+        type:String,
     },
     formId:{
         type:mongoose.Schema.Types.ObjectId,

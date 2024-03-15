@@ -4,10 +4,9 @@ const Form = require("../models/Form");
 // create a response
 exports.createResponse = async(req,res)=>{
     try{
-        const {userDet} = req.user;
         const {formId,data,commentBody} = req.body;
         
-        if(!userDet || !formId || !data){
+        if(!formId || !data){
             return res.status(401).json({
                 success:false,
                 message:"Please provide all data"

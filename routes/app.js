@@ -6,7 +6,8 @@ const Form = require("../models/User");
 const {changePassword,sendOtp,login,signup, getUser} = require("../controllers/Auth");
 const {createForm, getAllForms, getForm, deleteForm} = require("../controllers/Form");
 const {getAllTemplates, getTemplate} = require("../controllers/Template");
-const {resetPasswordToken, resetPassword} = require("../controllers/ResetPassword")
+const {resetPasswordToken, resetPassword} = require("../controllers/ResetPassword");
+const {createResposne} = require("../controllers/Response")
 
 //import middlewares
 const {auth,isAdmin,isFormFiller} = require("../middlewares/auth");
@@ -33,6 +34,8 @@ router.post("/getForm",getForm)
 // TODO: getForm api pending
 router.post("/createForm", auth,isAdmin,createForm);
 router.delete("/deleteForm",auth,isAdmin, deleteForm);
+
+router.post("/createResponse", createResposne);
 
 
 

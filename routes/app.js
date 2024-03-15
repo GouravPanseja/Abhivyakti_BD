@@ -28,8 +28,10 @@ router.get("/getAllForms",auth, isAdmin,getAllForms);
 router.get("/getAllTemplates",auth,isAdmin,getAllTemplates);
 router.post("/getTemplate", auth,isAdmin,getTemplate);
 
+router.post("/getForm",getForm)
+
 // TODO: getForm api pending
-router.get("/createForm", auth,isAdmin,createForm);
+router.post("/createForm", auth,isAdmin,createForm);
 router.delete("/deleteForm",auth,isAdmin, deleteForm);
 
 

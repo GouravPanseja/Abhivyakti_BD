@@ -12,11 +12,7 @@ const FormSchema = mongoose.Schema({
     },
     logoUrl:{
         type:String,
-        required:true,
-    },
-    formUrl:{
-        type:String,
-        required:true,
+
     },
     admin:{
         type:mongoose.Schema.Types.ObjectId,
@@ -48,8 +44,9 @@ const FormSchema = mongoose.Schema({
     startAt:{
         type:Date,
         required:true,
+        default:Date.now(),
     },
-    expiresAt:{
+    expireAt:{
         type:Date,
         required:true,
 
@@ -60,7 +57,8 @@ const FormSchema = mongoose.Schema({
     },
     participantCount:{
         type:Number,
-        required:true
+        required:true,
+        default:Infinity,
     }
 
 

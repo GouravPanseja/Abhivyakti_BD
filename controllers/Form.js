@@ -13,42 +13,43 @@ exports.createForm = async(req,res)=>{
     try{
         // fetch data from req
 
-        const{title, formUrl, quesData,createdBy, expireAt, startAt, participantCount, visualData} = req.body;
+        const{title, quesData, expireAt, startAt, participantCount, visualData} = req.body;
 
-        const {userDet} = req.user;
+        const userDet = req.user;
 
-        const logo = req.files.logo;
+        console.log(title, quesData, expireAt, startAt, participantCount, visualData, userDet);
 
-        // validation   
-        if(!title || !formUrl ||  !quesData || !expireAt || !startAt || !participantCount || !visualData || !userDet || !logo){
+         // validation   
+        if(!title ||  !quesData || !expireAt || !startAt || !participantCount || !visualData || !userDet ){
             return res.status(400).json({
                 success:false,
                 message:"Please fill all the fields",
             })
         }
 
-        // upload logo to cloudinary
-        const uploadedLogo = await imageUploader(logo,process.env.LOGO_FOLDER);
+        // // upload logo to cloudinary
+        // const uploadedLogo = await imageUploader(logo,process.env.LOGO_FOLDER);
 
 
-        //insert Ids of Ques created in the Form
+        // create docs for questions in  the Que collection
+       
         const quesDocs  = await Que.insertMany(quesData);
+        
+      
+        const quesIds = quesDocs.map((que) => que._id);           // get Ids of Ques created in the Form
 
-        const quesIds = quesDocs.map((que) => que._id);
+       
+        const formCreated = await Form.create({title,  admin:userDet.id, data:quesIds, expireAt, startAt, participantCount, visualData})         // create Form entry 
 
-        // create Form entry 
-        const formCreated = await Form.create({title, logoUrl:uploadedLogo.secure_url, formUrl, admin:userDet.id, data:quesIds, expireAt, startAt, participantCount, visualData})
+
+        var userUpdated = await User.findByIdAndUpdate(userDet.id, {$push:{forms:formCreated._id}}, {new:true});    // update the admin User's doc in its collection
 
         
-        // update the admin User's doc in its collection
-        var userUpdated = await User.findByIdAndUpdate(admin.id, {$push:{forms:formCreated._id}}, {new:true});
-
-        // update the level of the user
-        let level = Math.floor(userUpdated.forms.length / 5) ;        // 5 forms to jump up a level and max 10 levels are there
+        let level = Math.floor(userUpdated.forms.length / 5) ;          // update the level of the user       // 5 forms to jump up a level and max 10 levels are there
         
         if(level >= 10) level = 10;
 
-        userUpdated = await User.findByIdAndUdate(admin.id, {level}, {new:true});
+        userUpdated = await User.findByIdAndUpdate(userDet.id, {level}, {new:true});
 
 
         // send resposne
@@ -115,6 +116,41 @@ exports.getAllForms = async(req,res)=>{
 }
 
 // getForm api pending
+exports.getForm = async (req,res)=>{
+    try{    
+
+        const {formId} = req.body;
+        console.log(req.body);
+
+        console.log(formId);
+
+        if(!formId){
+            return res.status(400).json({
+                success:false,
+                message:"FormId not present"
+            })
+        }
+
+        const form = await Form.findById(formId).populate("admin").populate("data");
+
+
+        res.status(200).json({
+            success:true,
+            data:form,
+            message:'form fetched succefully'
+        })
+        
+    }   
+
+    catch(err){
+        console.log(err);
+
+        res.status(400).json({
+            success:false,
+            message:"something went wrong while fetching form"
+        })
+    }
+}
 
 
 // delete form

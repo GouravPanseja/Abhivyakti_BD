@@ -8,11 +8,15 @@ const jwt = require("jsonwebtoken")
 
 require("dotenv").config()
 // send OTP function
+
+
+
 exports.sendOtp = async(req,res)=>{
 
     try{
         // fetch required data
         const {email} = req.body            // fetch email from body
+
         console.log(req.body);
         // validation
         if(!email){
@@ -94,8 +98,8 @@ exports.signup = async(req,res)=>{
 
         // validation
 
-        if(!name || !email || !password || !confirmPassword || !otp){        // role will absolutly will be there because we have switch button in the Front end for this
-            return res.status(403).json({
+        if(!name || !email || !password || !confirmPassword  || !otp){        // role will absolutly will be there because we have switch button in the Front end for this
+            return res.status(400).json({
                 success:false,
                 message:"All fields are not filled"
             })
@@ -121,15 +125,18 @@ exports.signup = async(req,res)=>{
                 message:"email already in use"
             })
         }
+
         // get most recent otp from db
         
-        var recentOtp = await Otp.find({email}).sort({createdAt:-1}).limit(1);    // sort in descending order on the basis of createdAt field's value and extract the first one from it .. giving the most recent otpObj
+        var recentOtp = await Otp.find({email}).sort({timeStamp : -1}).limit(1); // sort in descending order on the basis of createdAt field's value and extract the first one from it .. giving the most recent otpObj
 
-        console.log("recentOtp ",recentOtp);
+        console.log("recentOtp ---------->",recentOtp);
 
 
-        // check if there is any otp found... here, recentOtp should is an array of length 1;
+        // check if there is any otp found... here, recentOtp should should be an array of length 1;
         if(recentOtp.length == 0){  
+
+            
             return res.status(400).json({
                 success:false,
                 message:"OTP wasn't created"
@@ -137,12 +144,13 @@ exports.signup = async(req,res)=>{
         }
 
         // compare the actual otp with given otp
-        // if(recentOtp.otp !== otp){
-        //     return res.satus(400).json({
-        //         success:false,
-        //         message:"Otp doesn't match"
-        //     })
-        // }
+        if(recentOtp[0].otp !== otp){
+            console.log("otp recieved " , otp , "otp from db", recentOtp.otp)
+            return res.status(400).json({
+                success:false,
+                message:"Otp doesn't match"
+            })
+        }
 
         // hash the pass
         const hashedPass = await bcrypt.hash(password,10);
@@ -194,32 +202,32 @@ exports.signup = async(req,res)=>{
 // login 
 exports.login = async(req,res)=>{
     try{
-        // extract data from req body
-        const {email, password} = req.body;
+       
+        const {email, password} = req.body;                                                  // extract data from req body
 
-        // validation of data 
-        if(!email || !password){
+     
+        if(!email || !password){                                                             // validation of data 
             return res.status(403).json({
                 success:false,
                 message:"please enter all details"
             })
         }
 
-        // check if user is registered
-        const userDet = await User.findOne({email});
+       
+        const userDet = await User.findOne({email});                                         // check if user is registered
 
         if(!userDet){
-            return res.json(401).json({
+            return res.status(401).json({
                 success:false,
                 message:"User is not registerd. Please signup",
             })
         }
-        // compare the pass
-        const isPassMatched = await bcrypt.compare(password, userDet.password);
-
-        // generate jwt token 
         
-        if(isPassMatched){
+        const isPassMatched = await bcrypt.compare(password, userDet.password);              // compare the pass
+
+        
+        
+        if(isPassMatched){                                                                  // generate jwt token 
 
             const payload = {
                 email: userDet.email,
@@ -231,8 +239,8 @@ exports.login = async(req,res)=>{
                 expiresIn:"2h",
             });
             
-            // modify the userObj before sending to the client
-            userDet.token = token;
+            
+            userDet.token = token;                                                      // modify the userObj before sending to the client
             userDet.password = undefined;
 
             // options for cookie
@@ -242,7 +250,7 @@ exports.login = async(req,res)=>{
             }
 
             // create cookie and send response
-            res.cookie("token",token, options).status(200).json({
+            res.status(200).json({
                 success:true,
                 token,
                 userDet,

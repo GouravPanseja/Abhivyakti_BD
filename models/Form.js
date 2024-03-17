@@ -6,6 +6,11 @@ const FormSchema = mongoose.Schema({
         type:String,
         required:true,
     },
+    views:{
+        type:Number,
+        required:true,
+        default:0,
+    },
     category:{
         type:String,
         enum:["governmentSurvey","healthcareSurvey","eventSurvey","feedbackSurvey","diversity","covid-19","others"]
@@ -13,6 +18,10 @@ const FormSchema = mongoose.Schema({
     logoUrl:{
         type:String,
 
+    },
+
+    spreadsheetUrl:{
+        type:String,
     },
     admin:{
         type:mongoose.Schema.Types.ObjectId,

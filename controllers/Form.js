@@ -3,9 +3,11 @@ const User  = require("../models/User");
 const Que  = require("../models/Que");
 const Comment  = require("../models/Comment");
 const Response  = require("../models/Response");
-const imageUploader = require("../utils/imageUploader");
+const {imageUploader} = require("../utils/imageUploader");
 const mongoose = require("mongoose");
 const { ObjectId } = require('mongodb');
+const {storage} = require("../config/firebase");
+const {ref, uploadBytes, getDownloadURL} = require("firebase/storage");
 // create a form
 
 exports.createForm = async(req,res)=>{
@@ -13,14 +15,23 @@ exports.createForm = async(req,res)=>{
     try{
         // fetch data from req
 
-        const{title, quesData, expireAt, startAt, participantCount, visualData} = req.body;
+        const  formDataString = req.body.data;
+
+        const formDatObject = JSON.parse(formDataString);
+
+
+
+        const {title , quesData, expireAt, startAt, participantCount, visualData} = formDatObject;
 
         const userDet = req.user;
 
-        console.log(title, quesData, expireAt, startAt, participantCount, visualData, userDet);
+        const logo = req.files.file
+
+
+        console.log("req body is --------------------------------------------------------------" ,req.body);
 
          // validation   
-        if(!title ||  !quesData || !expireAt || !startAt || !participantCount || !visualData || !userDet ){
+        if(!title ||  !quesData || !expireAt || !startAt || !participantCount || !visualData || !userDet || !logo ){
             return res.status(400).json({
                 success:false,
                 message:"Please fill all the fields",
@@ -30,6 +41,26 @@ exports.createForm = async(req,res)=>{
         // // upload logo to cloudinary
         // const uploadedLogo = await imageUploader(logo,process.env.LOGO_FOLDER);
 
+        const storageRef = ref(storage, `Logos/${logo.name}`);
+
+        console.log("storage ref   " , storageRef);
+
+
+        console.log("logo name " ,logo.name);
+        
+        // Create a reference from a Google Cloud Storage URI
+        const gsReference = ref(storage, `gs://bucket/Logos/${logo.name}`);
+
+
+        const path = logo.name.split(".");
+        const ext = path[path.length-1];
+    
+        console.log("extenstion is " ,ext);
+
+        await uploadBytes(storageRef, logo, {contentType: `image/${ext}`});
+
+        const url = await getDownloadURL(storageRef);
+        console.log("Download URL:", url);
 
         // create docs for questions in  the Que collection
        
@@ -39,7 +70,7 @@ exports.createForm = async(req,res)=>{
         const quesIds = quesDocs.map((que) => que._id);           // get Ids of Ques created in the Form
 
        
-        const formCreated = await Form.create({title,  admin:userDet.id, data:quesIds, expireAt, startAt, participantCount, visualData})         // create Form entry 
+        const formCreated = await Form.create({title,logoUrl:url,  admin:userDet.id, data:quesIds, expireAt, startAt, participantCount, visualData})         // create Form entry 
 
 
         var userUpdated = await User.findByIdAndUpdate(userDet.id, {$push:{forms:formCreated._id}}, {new:true});    // update the admin User's doc in its collection
@@ -119,7 +150,7 @@ exports.getAllForms = async(req,res)=>{
 exports.getForm = async (req,res)=>{
     try{    
 
-        const {formId} = req.body;
+        const {formId,viewInc} = req.body;
         console.log(req.body);
 
         console.log(formId);
@@ -131,7 +162,14 @@ exports.getForm = async (req,res)=>{
             })
         }
 
-        const form = await Form.findById(formId).populate("admin").populate("data");
+        var form;
+
+        if(viewInc){
+            form = await Form.findByIdAndUpdate(formId,{ $inc:{views:1}}, {new:true}).populate("admin").populate("data");
+        }
+        {
+            form =  await Form.findById(formId).populate("admin").populate("data");
+        }
 
 
         res.status(200).json({
@@ -158,7 +196,8 @@ exports.deleteForm = async (req,res)=>{
     var deletedDocs =[];            // to keep track of what docs are successfully deleted
     try{
         const {formId} = req.body;
-        const {userDet} = req.user;
+        const userDet = req.user;
+        console.log("user det" ,userDet);
 
         //validation
         if(!formId){
@@ -171,27 +210,37 @@ exports.deleteForm = async (req,res)=>{
         
         // delete Que docs of the form
         const deltedQues = await Que.deleteMany({form:formId})
+        console.log("del ques", deltedQues);
         deletedDocs.push("ques");
 
         // delete Responses of the form
-        const deltedResponses= await Response.deleteMany({form:formId})
+        const deltedResponses= await Response.deleteMany({formId:formId})
+        console.log("del resp", deltedResponses);
         deletedDocs.push("responses");
 
-        // delete Comments of the form
-        const deltedComments = await Comment.deleteMany({form:formId})
-        deletedDocs.push("comments");
-
         // update the Admin of the form
-        const upatedUser = await User.findByIdAndUpdate(userDet.id, {$pull:{forms:formId}})
+        var upatedUser = await User.findByIdAndUpdate(userDet.id, {$pull:{forms:formId}})
         deletedDocs.push("user");
+
+        let level = Math.floor(upatedUser.forms.length / 5) ;          // update the level of the user       // 5 forms to jump up a level and max 10 levels are there
+        
+        if(level >= 10) level = 10;
+
+        upatedUser = await User.findByIdAndUpdate(userDet.id, {level}, {new:true});
 
         // delete the form
         const deletedForm = await Form.findByIdAndDelete(formId);
         deletedDocs.push("form");
 
+        // fetch remaining forms for the user
+        const remainingForms = await Form.find({admin:userDet.id})
+
+        console.log(deletedDocs);
+
         return res.status(200).json({
             success:true,
-            message:"Form deleted succesfully"
+            message:"Form deleted succesfully",
+            data:remainingForms,
         })
 
     }
@@ -201,6 +250,69 @@ exports.deleteForm = async (req,res)=>{
             success:false,
             message:"Something went wrong while deleting the form",
             data:deletedDocs,
+        })
+    }
+}
+
+
+exports.getLatestForm = async(req,res)=>{
+
+    try{
+
+        const userDet = req.user;
+
+        const latestForm = await Form.findOne({admin: userDet.id}).sort({ createdAt: -1 }).exec();
+
+        return res.status(200).json({
+            success:true,
+            message:"latest form fetched succesfuly",
+            data:latestForm,
+        })
+
+
+    }
+
+    catch(err){
+        console.log(err);
+        return res.status(400).json({
+            success:false,
+            message:"couldn't fetch L-Form"
+        })
+    }
+}
+
+exports.updateSpreadsheet = async(req,res)=>{
+
+    try{
+
+        const {spUrl, formId} = req.body;
+
+        if(!spUrl){
+            console.log("spreadsheet url is missing ");
+            return res.status(400).json({
+                
+                success:false,
+                message:'url is missing'
+            })
+        }
+
+        const userDet = req.user;
+
+        const updatedForm = await Form.findByIdAndUpdate(formId, {spreadsheetUrl:spUrl} , {new :true});
+
+        return res.status(200).json({
+            success:true,
+            message:"spreadsheet url updated successfully",
+            data:updatedForm,
+        })
+
+    }
+    catch(err){
+        console.log(err);
+
+        res.status(400).json({
+            success:false,
+            message:"couldn't update the spreadsheet url"
         })
     }
 }

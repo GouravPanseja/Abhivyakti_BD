@@ -34,6 +34,7 @@ dbConnect();
 // connection to cloundinary
 cloudinaryConnect();
 
+
 // activate server
 app.listen(PORT , ()=>{
     console.log(`app is running at port ${PORT}`);

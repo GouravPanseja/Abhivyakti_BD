@@ -4,33 +4,31 @@ const Form = require("../models/Form");
 // create a response
 exports.createResponse = async(req,res)=>{
     try{
-        const {formId,data,commentBody} = req.body;
+
+        const {name, email, age, gender, formId, data,commentBody,completionTime} = req.body;
+
+        console.log("body------------- " ,req.body);
         
-        if(!formId || !data){
+        if(!formId || !data || !completionTime){
             return res.status(401).json({
                 success:false,
-                message:"Please provide all data"
+                message:"Please provide the required data"
             })
-        }
-        if(commentBody){
+        }   
 
-            const createdComment = await Comment.create({
-                createdBy:userDet.id,
-                body:commentBody,
-                form:formId,
-            })
+        var createdResponse;
+
+        if(name && email && age && gender && commentBody){
+            createdResponse = await Response.create({name, email, age, gender, formId, data,commentBody,completionTime})
+        }
+        else{
+            createdResponse = await Response.create({formId, data,completionTime})                     // for anonymous form filler case
         }
 
-        const createdResponse  = await Response.create({responseBy:userDet.id, formId, data});
+        const updatedForm = await Form.findByIdAndUpdate(formId, {$push:{responses:createdResponse._id}}, {new:true});
+
         
-        var updatedForm;
-        if(!commentBody){
-            updatedForm =  await Form.findByIdAndUpdate(formId, {$push:{responses:createdResponse._id}}, {new:true});
-        }else{
-            updatedForm = await From.findByIdAndUpdate(formId, {$push:{responses:createdResponse._id}, $push:{comments:createdResponse._id}}, {new:true});
-        }
-        
-        console.log("updatedForm ",updatedForm);
+
         return res.status(200).json({
             success:true,
             message:"Response created succesfully",
@@ -39,7 +37,7 @@ exports.createResponse = async(req,res)=>{
     }
     catch(err){
         console.log("error",err);
-        res.status(400).json({
+        return res.status(400).json({
             success:false,
             data:err.message,
             message:"Something went wrong while creating response. Please try again"
@@ -50,6 +48,8 @@ exports.createResponse = async(req,res)=>{
 // get all resposnes 
 exports.getAllResponse = async(req,res)=>{
     try{
+
+        console.log("trying to get all responses");
         const {formId} = req.body;
 
         if(!formId){
@@ -58,8 +58,11 @@ exports.getAllResponse = async(req,res)=>{
                 message:"FormId not provided"
             })
         }
-        const responses = await Response.find({formId}).populate("responseBy").exec();
 
+        console.log(formId)
+        const responses = await Response.find({formId:formId}).populate("formId").exec();
+
+        console.log("responses" ,responses)
         return res.status(200).json({
             success:true,
             data:responses,

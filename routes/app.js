@@ -4,10 +4,10 @@ const Form = require("../models/User");
 
 // import controllers
 const {changePassword,sendOtp,login,signup, getUser} = require("../controllers/Auth");
-const {createForm, getAllForms, getForm, deleteForm} = require("../controllers/Form");
+const {createForm, getAllForms, getForm, deleteForm, updateSpreadsheet} = require("../controllers/Form");
 const {getAllTemplates, getTemplate} = require("../controllers/Template");
 const {resetPasswordToken, resetPassword} = require("../controllers/ResetPassword");
-const {createResposne} = require("../controllers/Response")
+const {createResponse, getAllResponse} = require("../controllers/Response")
 
 //import middlewares
 const {auth,isAdmin,isFormFiller} = require("../middlewares/auth");
@@ -33,9 +33,16 @@ router.post("/getForm",getForm)
 
 // TODO: getForm api pending
 router.post("/createForm", auth,isAdmin,createForm);
-router.delete("/deleteForm",auth,isAdmin, deleteForm);
+router.post("/deleteForm",auth,isAdmin, deleteForm);
 
-router.post("/createResponse", createResposne);
+router.post("/createResponse", createResponse);
+router.post("/getAllResponse",auth,isAdmin, getAllResponse);
+
+router.post("/updateSpreadsheet", auth,isAdmin, updateSpreadsheet);
+
+
+// router.post("/latestForm", auth,isAdmin,getLatestForm);
+// router.get("/latestForm", (req,res)=> res.send("good"));
 
 
 

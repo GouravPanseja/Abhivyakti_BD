@@ -22,6 +22,18 @@ const ResponseSchema = mongoose.Schema({
     data:{
         type:Object,
         required:true,
+    },
+    commentBody:{
+
+    },
+    createdAt:{
+        type:Date,
+        required:true,
+        default : Date.now()
+    },
+    completionTime:{
+        type:Number,
+        required:true,
     }
 })
 

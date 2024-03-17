@@ -15,18 +15,19 @@ const OtpSchema = mongoose.Schema({
         type:Date,
         default:Date.now(),
         expires:5*60,
-    }
+    },
+
     
 })
 
-// function t o send emails
+// function to send emails
 
-async function sendVerificationEmail({email,otp}){
+const  sendVerificationEmail=  async(email,otp)=>{
     try{
-
+        console.log('email is -------->', email);
         const emailResponse = await mailSender(email, "Verification email from Qeurify", otp);
         console.log("Email sent succesfully");
-        console.log("emailResponse",emailResponse);
+        // console.log("emailResponse",emailResponse);
     }       
 
     catch(err){
@@ -39,8 +40,17 @@ async function sendVerificationEmail({email,otp}){
 
 OtpSchema.pre("save", async function(next){
 
-    await sendVerificationEmail(this.email, this.otp);
+    try{
+        console.log('email was ---> ---> ' ,this.email);
+        await sendVerificationEmail(this.email, this.otp);
 
+    }
+
+    catch(err){
+        console.log("error in presave middlware " ,err);
+
+    }
     next();
+    
 } )
 module.exports = mongoose.model("Otp",OtpSchema);

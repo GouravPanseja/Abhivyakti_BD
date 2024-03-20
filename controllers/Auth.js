@@ -62,7 +62,7 @@ exports.sendOtp = async(req,res)=>{
         
         
         const createdOtpDoc = await  Otp.create({email,otp});  // create entry in db 
-
+        console.log("created otp doc", createdOtpDoc);
         res.status(200).json({
             success:true,
             message:"Otp sent succesfully",

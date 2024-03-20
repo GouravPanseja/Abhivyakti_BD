@@ -19,48 +19,50 @@ exports.createForm = async(req,res)=>{
 
         const formDatObject = JSON.parse(formDataString);
 
-
-
         const {title , quesData, expireAt, startAt, participantCount, visualData} = formDatObject;
 
         const userDet = req.user;
 
-        const logo = req.files.file
+
 
 
         console.log("req body is --------------------------------------------------------------" ,req.body);
 
          // validation   
-        if(!title ||  !quesData || !expireAt || !startAt || !participantCount || !visualData || !userDet || !logo ){
+        if(!title ||  !quesData || !expireAt || !startAt || !participantCount || !visualData || !userDet ){
+            
+            console.log(!title && "title");
+            console.log(!quesData && "quesData");
+            console.log(!expireAt && "expireAt");
+            console.log(!startAt && "startAt");
+            console.log(!participantCount && "participantCount");
+            console.log(!visualData && "visualData");
+            console.log(!userDet && "userDet");
+  
             return res.status(400).json({
                 success:false,
                 message:"Please fill all the fields",
             })
         }
 
-        // // upload logo to cloudinary
+        // upload logo to cloudinary
         // const uploadedLogo = await imageUploader(logo,process.env.LOGO_FOLDER);
 
-        const storageRef = ref(storage, `Logos/${logo.name}`);
+//         const storageRef = ref(storage, `Logos/${logo.name}`);
+// s
+//         console.log("logo name " ,logo.name);
 
-        console.log("storage ref   " , storageRef);
+//         const path = logo.name.split(".");
 
+//         const ext = path[path.length-1];
 
-        console.log("logo name " ,logo.name);
-        
-        // Create a reference from a Google Cloud Storage URI
-        const gsReference = ref(storage, `gs://bucket/Logos/${logo.name}`);
+//         console.log("file is --------> "  ,logo);
 
+//         await uploadBytes(storageRef, logo, {contentType: `image/${ext}`});
 
-        const path = logo.name.split(".");
-        const ext = path[path.length-1];
-    
-        console.log("extenstion is " ,ext);
+//         const url = await getDownloadURL(storageRef);
 
-        await uploadBytes(storageRef, logo, {contentType: `image/${ext}`});
-
-        const url = await getDownloadURL(storageRef);
-        console.log("Download URL:", url);
+//         console.log("Download URL:", url);
 
         // create docs for questions in  the Que collection
        
@@ -70,7 +72,7 @@ exports.createForm = async(req,res)=>{
         const quesIds = quesDocs.map((que) => que._id);           // get Ids of Ques created in the Form
 
        
-        const formCreated = await Form.create({title,logoUrl:url,  admin:userDet.id, data:quesIds, expireAt, startAt, participantCount, visualData})         // create Form entry 
+        const formCreated = await Form.create({title,  admin:userDet.id, data:quesIds, expireAt, startAt, participantCount, visualData})         // create Form entry 
 
 
         var userUpdated = await User.findByIdAndUpdate(userDet.id, {$push:{forms:formCreated._id}}, {new:true});    // update the admin User's doc in its collection

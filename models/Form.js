@@ -58,7 +58,7 @@ const FormSchema = mongoose.Schema({
     expireAt:{
         type:Date,
         required:true,
-
+        default:Date.now() + 2592000,
     },
     visualData:{
         type:Object,
